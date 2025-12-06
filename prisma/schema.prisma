@@ -1,0 +1,41 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum STATUS {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PRIORITY {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Todo {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  completed   Boolean @default(false)
+  status      STATUS  @default(PENDING)
+  priority    PRIORITY @default(MEDIUM)
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([completed])
+  @@index([priority])
+  @@index([status])
+}
+
