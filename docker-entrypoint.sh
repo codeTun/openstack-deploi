@@ -3,10 +3,13 @@ set -e
 
 echo "🚀 Starting Todo App..."
 
-echo "📊 Running database migrations..."
-pnpm prisma migrate deploy
+echo "⏳ Waiting for database to be ready..."
+sleep 5
 
-echo "✅ Migrations completed successfully!"
+echo "📊 Synchronizing database schema..."
+pnpm prisma db push --accept-data-loss --skip-generate
+
+echo "✅ Database schema synchronized successfully!"
 
 echo "🌐 Starting Next.js application..."
 exec pnpm start

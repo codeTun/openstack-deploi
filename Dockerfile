@@ -38,6 +38,12 @@ COPY --from=build /usr/src/app/prisma ./prisma
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
 
+# Generate Prisma Client in production image
+RUN pnpm prisma generate
+
+# Fix permissions for node_modules (Prisma needs to write)
+RUN chown -R node:node /usr/src/app
+
 USER node
 
 EXPOSE 3000
