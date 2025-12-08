@@ -23,19 +23,38 @@ enum PRIORITY {
   HIGH
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String   // Hashed password
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  todos     Todo[]
+
+  @@index([email])
+}
+
 model Todo {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
-  completed   Boolean @default(false)
-  status      STATUS  @default(PENDING)
-  priority    PRIORITY @default(MEDIUM)
+  completed   Boolean   @default(false)
+  status      STATUS    @default(PENDING)
+  priority    PRIORITY  @default(MEDIUM)
   dueDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // User relation
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([completed])
   @@index([priority])
   @@index([status])
+  @@index([userId])
 }
 

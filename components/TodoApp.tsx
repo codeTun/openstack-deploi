@@ -55,6 +55,7 @@ export default function TodoApp() {
   const [filter, setFilter] = useState<Filter>("all");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   // Form state
   const [title, setTitle] = useState("");
@@ -70,6 +71,7 @@ export default function TodoApp() {
   const loadTodos = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
       const filters: Record<string, boolean | PRIORITY | STATUS> = {};
       if (filter !== "all") filters.completed = filter === "completed";
       if (priorityFilter) filters.priority = priorityFilter as PRIORITY;
@@ -79,8 +81,9 @@ export default function TodoApp() {
         filters as Parameters<typeof fetchTodos>[0]
       );
       setTodos(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load todos:", error);
+      setError(error.message || "Failed to load tasks");
     } finally {
       setLoading(false);
     }
@@ -182,18 +185,25 @@ export default function TodoApp() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="text-5xl mb-4">✨</div>
-          <h1 className="text-5xl font-bold bg-linear-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-pink-600 dark:from-indigo-400 dark:to-pink-400 bg-clip-text text-transparent mb-2">
             My Tasks
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-lg">
             {stats.active} active · {stats.completed} done · {stats.total} total
           </p>
         </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <p className="text-red-600 dark:text-red-400 text-center">{error}</p>
+          </div>
+        )}
 
         {/* Add/Edit Form */}
         <form
@@ -263,7 +273,7 @@ export default function TodoApp() {
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 bg-linear-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105"
             >
               <Plus size={20} />
               {editingId ? "Update Task" : "Add Task"}

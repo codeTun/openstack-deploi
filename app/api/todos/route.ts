@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/middleware";
 
-// Get all todos with optional filters
+// Get all todos with optional filters (Protected)
 export async function GET(req: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const completed = req.nextUrl.searchParams.get("completed");
     const priority = req.nextUrl.searchParams.get("priority");
     const status = req.nextUrl.searchParams.get("status");
 
-    const where: any = {};
+    const where: any = {
+      userId: user.userId, // Only get user's own todos
+    };
     if (completed !== null) where.completed = completed === "true";
     if (priority) where.priority = priority.toUpperCase();
     if (status) where.status = status.toUpperCase();
@@ -28,9 +38,16 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Create a new todo
+// Create a new todo (Protected)
 export async function POST(req: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const {
       title,
       description,
@@ -50,6 +67,7 @@ export async function POST(req: NextRequest) {
         status,
         priority,
         dueDate: dueDate ? new Date(dueDate) : null,
+        userId: user.userId, // Associate todo with user
       },
     });
 

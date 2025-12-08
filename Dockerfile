@@ -27,7 +27,6 @@ RUN pnpm run build
 FROM base AS final
 WORKDIR /usr/src/app
 ENV NODE_ENV=production
-USER node
 
 COPY package.json ./
 COPY --from=deps /usr/src/app/node_modules ./node_modules
@@ -35,6 +34,13 @@ COPY --from=build /usr/src/app/.next ./.next
 COPY --from=build /usr/src/app/public ./public
 COPY --from=build /usr/src/app/prisma ./prisma
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+USER node
+
 EXPOSE 3000
 
-CMD ["pnpm", "start"]
+# Use entrypoint script to run migrations before starting
+ENTRYPOINT ["./docker-entrypoint.sh"]

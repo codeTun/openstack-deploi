@@ -1,12 +1,39 @@
 services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:16-alpine
+    container_name: todo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-todouser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todopassword}
+      POSTGRES_DB: ${POSTGRES_DB:-tododb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todouser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Next.js Application Service
   server:
     build:
       context: .
+    container_name: todo-app
     environment:
       NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-todouser}:${POSTGRES_PASSWORD:-todopassword}@db:5432/${POSTGRES_DB:-tododb}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test:
@@ -22,3 +49,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - app-network
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+
+# Network for service communication
+networks:
+  app-network:
+    driver: bridge

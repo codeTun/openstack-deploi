@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/middleware";
 
-// Get single todo
+// Get single todo (Protected)
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const { id } = await params;
     const todoId = parseInt(id);
 
@@ -14,8 +22,11 @@ export async function GET(
       return NextResponse.json({ error: "Invalid todo ID" }, { status: 400 });
     }
 
-    const todo = await prisma.todo.findUnique({
-      where: { id: todoId },
+    const todo = await prisma.todo.findFirst({
+      where: { 
+        id: todoId,
+        userId: user.userId, // Ensure user owns this todo
+      },
     });
 
     if (!todo) {
@@ -32,12 +43,19 @@ export async function GET(
   }
 }
 
-// Update a todo
+// Update a todo (Protected)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const { id } = await params;
     const todoId = parseInt(id);
 
@@ -46,6 +64,18 @@ export async function PATCH(
     }
 
     const data = await req.json();
+
+    // First verify the todo belongs to the user
+    const existingTodo = await prisma.todo.findFirst({
+      where: { 
+        id: todoId,
+        userId: user.userId,
+      },
+    });
+
+    if (!existingTodo) {
+      return NextResponse.json({ error: "Todo not found" }, { status: 404 });
+    }
 
     const todo = await prisma.todo.update({
       where: { id: todoId },
@@ -75,17 +105,36 @@ export async function PATCH(
     );
   }
 }
-// Delete a todo
+// Delete a todo (Protected)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authenticate user
+    const authResult = await requireAuth(req);
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    const { user } = authResult;
+
     const { id } = await params;
     const todoId = parseInt(id);
 
     if (isNaN(todoId)) {
       return NextResponse.json({ error: "Invalid todo ID" }, { status: 400 });
+    }
+
+    // Verify the todo belongs to the user before deleting
+    const existingTodo = await prisma.todo.findFirst({
+      where: { 
+        id: todoId,
+        userId: user.userId,
+      },
+    });
+
+    if (!existingTodo) {
+      return NextResponse.json({ error: "Todo not found" }, { status: 404 });
     }
 
     await prisma.todo.delete({

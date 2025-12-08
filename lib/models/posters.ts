@@ -1,9 +1,17 @@
 import { Todo, CreateTodoInput } from '@/types/todo';
 
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': token ? `Bearer ${token}` : '',
+  };
+}
+
 export async function createTodo(input: CreateTodoInput): Promise<Todo> {
   const response = await fetch('/api/todos', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(input),
   });
 
